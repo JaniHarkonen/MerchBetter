@@ -1,0 +1,5 @@
+{
+    "STATE_UNSET"       : 100,
+    "STATE_COMPLETED"   : 101,
+    "STATE_ABORTED"     : 102
+}

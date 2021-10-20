@@ -1,7 +1,9 @@
+import View from "./App/View.js";
+
 function App() {
   return (
     <div className="App">
-      lol test
+      <View />
     </div>
   );
 }
