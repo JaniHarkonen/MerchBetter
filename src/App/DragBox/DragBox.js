@@ -1,10 +1,18 @@
 export default class DragBox {
-    constructor(doc, callback = () => {}, upd_inval = 16) {
-        this.hostDocument = doc;            // Host document to which mouse event listener will be added
-        this.beingDragged = false;          // Whether the element is being dragged
-        this.updateCallback = callback;     // Callback function that will be used to update the state of the owner component
-        this.updateTimer = Date.now();      // Holds the system time of the latest update
-        this.updateInterval = upd_inval;    // Number of milliseconds between updates (default: 16)
+    constructor(settings) {
+        let sets = {
+            callback: () => { },
+            updateInterval: 16,
+            gridSize: 1,
+            ...settings
+        };
+
+        this.hostDocument = sets.document;          // Host document to which mouse event listener will be added
+        this.beingDragged = false;                  // Whether the element is being dragged
+        this.updateCallback = sets.callback;        // Callback function that will be used to update the state of the owner component
+        this.updateTimer = Date.now();              // Holds the system time of the latest update
+        this.updateInterval = sets.updateInterval;  // Number of milliseconds between updates (default: 16)
+        this.gridSize = sets.gridSize;              // Size of the grid to snap the element to (default: 1)
 
         this.position = {
             x: 0,
@@ -20,6 +28,12 @@ export default class DragBox {
 
         this.hostDocument.addEventListener("mousemove", this.updatePosition.bind(this));
     }
+
+        // (STATIC) Snaps a coordinate to fit a grid of given size
+    static snap(coord, grid) {
+        return Math.floor(coord / grid) * grid;
+    }
+        
     
         // Updates the position of the element in the event listener
     updatePosition(e) {
@@ -41,11 +55,10 @@ export default class DragBox {
             });
         }
     }
-
         // Sets the position of the element
     setPosition(x, y) {
-        this.position.x = x;
-        this.position.y = y;
+        this.position.x = DragBox.snap(x, this.gridSize);
+        this.position.y = DragBox.snap(y, this.gridSize);
     }
 
         // Returns a copy of the element's position
