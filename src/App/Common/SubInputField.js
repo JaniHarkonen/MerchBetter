@@ -90,5 +90,5 @@ const InputField = styled.input`
     border-radius   : 2px;
     padding-left    : 4px;
 
-    background-color: #E0E0E0;
+    background-color: white;
 `;

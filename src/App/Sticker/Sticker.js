@@ -5,20 +5,36 @@ import styled from "styled-components";
 import DragBox from "../DragBox/DragBox";
 import DraggableElement from "../DragBox/DraggableElement";
 import SubInputField from "../Common/SubInputField";
-import DropDownMenu from "../DropDownMenu/DropDownMenu";
+import StickerMenu from "./StickerMenu";
+
+import iconRecycleBin from "../../Assets/img_recycle_bin.svg";
+import iconCog from "../../Assets/img_cog.svg";
+import ItemState from "./ItemState.json";
 
 export default function Sticker(props) {
-    const [ position, setPosition ]   = useState({ x: 0, y: 0 });           // Position of the sticker
-    const [ dragBox, setDragBox, dragBoxREF ] = useState(null);             // DragBox used to drag the sticker upon mouse down
-    const [ nameField, setNameField, nameFieldREF ] = useState({});         // Name of the item
-    const [ priceFields, setPriceFields ] = useState({});                   // Price field inputs
-    const [ dropDownMenuOpen, openDropDownMenu ] = useState(false);         // Whether the drop down menu is open
+    const [ position, setPosition ]   = useState({ x: 0, y: 0 });   // Position of the sticker
+    const [ dragBox, setDragBox, dragBoxREF ] = useState(null);     // DragBox used to drag the sticker upon mouse down
+    const [ nameField, setNameField, nameFieldREF ] = useState({}); // Name of the item
+    const [ priceFields, setPriceFields ] = useState({});           // Price field inputs
+    const [ isSettingsOpen, openSettings ] = useState(false);       // Whether the settings menu is open
     
         // Default dimensions of the merch item sticker
     const defaultDimensions = {
         width: 256,
         height: 128
     }
+
+        // Default state color lightness values
+    const outlineLightness          = "68%";
+    const titleBackgroundLightness  = "83%";
+    const backgroundLightness       = "91%";
+
+        // Base colors for states
+    let stateColorStrings = [];
+    stateColorStrings[ItemState.STATE_UNSET / 100]      = "hsl(0, 0%, ";
+    stateColorStrings[ItemState.STATE_COMPLETED / 100]  = "hsl(128, 100%, ";
+    stateColorStrings[ItemState.STATE_OPEN / 100]       = "hsl(198, 100%, ";
+    stateColorStrings[ItemState.STATE_ABORTED / 100]    = "hsl(8, 100%, ";
 
     useEffect(() => {
             // Set DragBox component for dragging
@@ -130,6 +146,21 @@ export default function Sticker(props) {
         })
     }
 
+        // Removes the sticker upon clicking the trash bin icon
+    const handleRemoval = () => {
+        props.removeId(props.itemData.id);
+    }
+
+        // Toggles the settings drop down menu upon clicking the cog icon
+    const handleSettingsOpen = () => {
+        openSettings(!isSettingsOpen);
+    }
+
+        // Returns color of the current state given its lightness
+    const getStateColor = (light) => {
+        return stateColorStrings[props.itemData.state / 100] + light + ")";
+    }
+
         // Returns whether an editable field is being edited
     const checkEditing = () => {
         return nameFieldREF.current.isEditing;
@@ -164,28 +195,60 @@ export default function Sticker(props) {
                 left    : position.x * props.viewContext.zoomFactor + "px",
                 top     : position.y * props.viewContext.zoomFactor + "px",
                 width   : defaultDimensions.width * props.viewContext.zoomFactor,
-                height  : defaultDimensions.height * props.viewContext.zoomFactor
+                height  : defaultDimensions.height * props.viewContext.zoomFactor,
+                
+                borderColor: getStateColor(outlineLightness),
+
+                backgroundColor: getStateColor(backgroundLightness)
             }}
         >
+            {
+                isSettingsOpen &&
+                <StickerMenu
+                    openAt={{
+                        x: defaultDimensions.width * 0.9 * props.viewContext.zoomFactor,
+                        y: defaultDimensions.height * 0.2 * props.viewContext.zoomFactor
+                    }}
+                    currentState={props.itemData.state}
+                    setState={(state) => {
+                        openSettings(false);
+                        props.setStateOfId(props.itemData.id, state);
+                    }}
+                />
+            }
             <DraggableElement
-                    cbMouseDown={startDragging}
-                    cbMouseUp  ={stopDragging}
+                cbMouseDown={startDragging}
+                cbMouseUp={stopDragging}
             />
 
             <TitleContainer
+                style={{
+                    backgroundColor: getStateColor(titleBackgroundLightness),
+                    borderBottomColor: getStateColor(outlineLightness)
+                }}
             >
                 <DraggableElement
                     cbMouseDown={startDragging}
-                    cbMouseUp  ={stopDragging}
+                    cbMouseUp={stopDragging}
                 />
+                <ButtonRemove
+                    onClick={handleRemoval}
+                >
+                    <FullImage src={iconRecycleBin} />
+                </ButtonRemove>
+                <ButtonSettings
+                    onClick={handleSettingsOpen}
+                >
+                    <FullImage src={iconCog} />
+                </ButtonSettings>
                 <Title
-                    onDoubleClick   ={handleTitleDoubleClick}
-                    onMouseDown     ={() => {
+                    onDoubleClick={handleTitleDoubleClick}
+                    onMouseDown={() => {
                                         if( nameField.isEditing === false )
                                         startDragging();
-                                    }}
-                    onMouseUp       ={stopDragging}
-                    style           ={{
+                                }}
+                    onMouseUp={stopDragging}
+                    style={{
                         fontSize: props.viewContext.zoomFactor * 16 + "px"
                     }}
                 >
@@ -193,10 +256,10 @@ export default function Sticker(props) {
                         (nameField.isEditing === false)
                         ? nameField.name
                         : <TitleEditField
-                            value   ={nameField.name}
+                            value={nameField.name}
                             onChange={handleTitleInput}
-                            onFocus ={selectAllTextUponFocus}
-                            onBlur  ={unFocusEditFields}
+                            onFocus={selectAllTextUponFocus}
+                            onBlur={unFocusEditFields}
                           />
                     }
                 </Title>
@@ -229,14 +292,14 @@ export default function Sticker(props) {
                     }}
                 >
                     <SubInputField
-                        title       ="Sell: "
-                        value       ={priceFields.sell?.price}
-                        callbacks   ={{
+                        title="Sell: "
+                        value={priceFields.sell?.price}
+                        callbacks={{
                             onChange: handleSellPriceInput,
                             startDrag: startDragging,
                             stopDrag: stopDragging
                         }}
-                        style       ={{
+                        style={{
                             title: { fontSize: props.viewContext.zoomFactor * 16 + "px" },
                             inputField: { fontSize: props.viewContext.zoomFactor * 16 + "px" }
                         }}
@@ -252,9 +315,11 @@ export default function Sticker(props) {
 const Wrapper = styled.div`
     position: absolute;
 
-    background-color: gray;
+    background-color: white;
     z-index         : 1;
 
+    border-style    : solid;
+    border-width    : 1px;
     border-radius   : 12px;
 
     &:hover {
@@ -271,8 +336,8 @@ const TitleContainer = styled.div`
     justify-content : center;
     align-items     : center;
 
-    background-color: red;
-
+    border-bottom-style     : solid;
+    border-bottom-width     : 1px;
     border-top-left-radius  : 12px;
     border-top-right-radius : 12px;
 `;
@@ -306,4 +371,35 @@ const PriceInfoContainer = styled.div`
 const PriceInputFieldContainer = styled.div`
     position: relative;
     width   : 100%;
+`;
+
+const TitleBarButton = styled.div`
+    position: absolute;
+    top     : transform(translateY(-50%));
+    width   : 6%;
+    height  : 75%;
+
+    border-radius: 4px;
+
+    cursor: pointer;
+
+    &:hover {
+        background-color: rgba(0, 0, 0, 0.3);
+    }
+`;
+
+const ButtonRemove = styled(TitleBarButton)`
+    left: 3.5%;
+`;
+
+const ButtonSettings = styled(TitleBarButton)`
+    right: 3.5%;
+`;
+
+const FullImage = styled.img`
+    position: absolute;
+    left    : 0px;
+    top     : 0px;
+    width   : 100%;
+    height  : 100%;
 `;

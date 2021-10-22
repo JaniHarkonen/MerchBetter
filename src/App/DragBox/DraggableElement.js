@@ -6,7 +6,8 @@ export default function DraggableElement(props) {
         // Called upon mouse down
         // NOTICE: Mouse release should be handled by the parent component
         // as it requires event listeners for better performance!
-    const handleMouseDown = () => {
+    const handleMouseDown = (e) => {
+        if( e.button === 0 )
         props.cbMouseDown();
     }
 
