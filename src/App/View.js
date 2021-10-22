@@ -2,8 +2,8 @@ import React, { useEffect } from "react";
 import useState from "react-usestateref";
 import styled from "styled-components";
 
-import ItemState from "./MerchItem/ItemState.json";
-import MerchItem from "./MerchItem/MerchItem";
+import ItemState from "./Sticker/ItemState.json";
+import MerchItem from "./Sticker/Sticker";
 import DropDownMenu from "./DropDownMenu/DropDownMenu";
 import KeyManager from "./KeyManager";
 
@@ -78,7 +78,7 @@ export default function View() {
                     set: (new Date()).toString(),
                     quantity: 13000
                 },
-                state: ItemState.STATE_ABORTED
+                state: ItemState.STATE_UNSET
             }
         );
     }
@@ -86,6 +86,20 @@ export default function View() {
         // Adds a new merch item sticker to the view
     const addSticker = () => {
         setStickers(stickersREF.current.concat(makeDefaultSticker()));
+    }
+
+        // Removes a sticker given its ID
+    const removeSticker = (id) => {
+        setStickers(stickersREF.current.filter((stk) => stk.id !== id));
+    }
+        // Sets the state of a given sticker
+    const setStickerState = (id, state) => {
+        setStickers(stickers.map((stk) => {
+            if( stk.id === id )
+            stk.state = state;
+
+            return stk;
+        }))
     }
 
         // Closes the drop down menu
@@ -126,6 +140,8 @@ export default function View() {
                         key={item.key}
                         itemData={item}
                         viewContext={getViewContext()}
+                        removeId={removeSticker}
+                        setStateOfId={setStickerState}
                     />
                 )
             })

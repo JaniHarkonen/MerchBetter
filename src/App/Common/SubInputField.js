@@ -2,7 +2,7 @@ import React from "react";
 import styled from "styled-components";
 
 import { FillElement } from "./FillElement";
-import DraggableElement from "../App/DragBox/DraggableElement";
+import DraggableElement from "../DragBox/DraggableElement";
 
 export default function SubInputField(props) {
 
@@ -90,5 +90,5 @@ const InputField = styled.input`
     border-radius   : 2px;
     padding-left    : 4px;
 
-    background-color: #E0E0E0;
+    background-color: white;
 `;
