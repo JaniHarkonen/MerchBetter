@@ -2,7 +2,7 @@ import React from "react";
 import styled from "styled-components";
 
 import { FillElement } from "./FillElement";
-import DraggableElement from "../App/DragBox/DraggableElement";
+import DraggableElement from "../DragBox/DraggableElement";
 
 export default function SubInputField(props) {
 

@@ -4,13 +4,15 @@ import styled from "styled-components";
 
 import DragBox from "../DragBox/DragBox";
 import DraggableElement from "../DragBox/DraggableElement";
-import SubInputField from "../../Common/SubInputField";
+import SubInputField from "../Common/SubInputField";
+import DropDownMenu from "../DropDownMenu/DropDownMenu";
 
-export default function MerchItem(props) {
+export default function Sticker(props) {
     const [ position, setPosition ]   = useState({ x: 0, y: 0 });           // Position of the sticker
     const [ dragBox, setDragBox, dragBoxREF ] = useState(null);             // DragBox used to drag the sticker upon mouse down
     const [ nameField, setNameField, nameFieldREF ] = useState({});         // Name of the item
     const [ priceFields, setPriceFields ] = useState({});                   // Price field inputs
+    const [ dropDownMenuOpen, openDropDownMenu ] = useState(false);         // Whether the drop down menu is open
     
         // Default dimensions of the merch item sticker
     const defaultDimensions = {
@@ -244,7 +246,7 @@ export default function MerchItem(props) {
             GE Limit: {props.itemData.limitInfo.quantity}<br />
             Limit reset: {add(props.itemData.limitInfo.set).getHours()}
         </Wrapper>
-    )
+    );
 }
 
 const Wrapper = styled.div`

@@ -2,8 +2,8 @@ import React, { useEffect } from "react";
 import useState from "react-usestateref";
 import styled from "styled-components";
 
-import ItemState from "./MerchItem/ItemState.json";
-import MerchItem from "./MerchItem/MerchItem";
+import ItemState from "./Sticker/ItemState.json";
+import MerchItem from "./Sticker/Sticker";
 import DropDownMenu from "./DropDownMenu/DropDownMenu";
 import KeyManager from "./KeyManager";
 
