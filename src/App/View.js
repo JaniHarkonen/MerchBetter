@@ -102,6 +102,16 @@ export default function View() {
         }))
     }
 
+        // Sets the limit cooldown timer of a sticker at a certain date
+    const setStickerLimitTimer = (id, date) => {
+        setStickers(stickers.map((stk) => {
+            if( stk.id === id )
+            stk.limitInfo.set = date.toString();
+
+            return stk;
+        }));
+    }
+
         // Closes the drop down menu
     const closeDropDownMenu = () => {
         setDropDownMenu({
@@ -142,6 +152,7 @@ export default function View() {
                         viewContext={getViewContext()}
                         removeId={removeSticker}
                         setStateOfId={setStickerState}
+                        setLimitTimerOfId={setStickerLimitTimer}
                     />
                 )
             })

@@ -15,7 +15,7 @@ export default function SubInputField(props) {
 
             <TitleWrapper
                 style={{
-                    width: props.style?.title?.width || "25%"
+                    width: props.style?.title?.width || "50%"
                 }}
             >
                 <Title
@@ -33,7 +33,7 @@ export default function SubInputField(props) {
 
             <InputFieldWrapper
                 style={{
-                    width: props.style?.inputField?.width || "25%"
+                    width: props.style?.inputField?.width || "50%"
                 }}
             >
                 <DraggableElement
