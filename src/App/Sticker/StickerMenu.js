@@ -4,10 +4,16 @@ import styled from "styled-components";
 import DropDownMenu from "../DropDownMenu/DropDownMenu";
 import ItemState from "./ItemState.json";
 
+import imgClockface from "../../Assets/img_clockface.svg";
+import imgGreenCheck from "../../Assets/img_check_green.svg";
+import imgRedCross from "../../Assets/img_cross_red.svg";
+import imgOppositeArrows from "../../Assets/img_arrows_opposite.svg";
+
 export default function StickerMenu(props) {
     const options = [
         {
             title: "Open",
+            icon: imgClockface,
             state: ItemState.STATE_OPEN,
             onClick: () => {
                 props.setState(ItemState.STATE_OPEN);
@@ -15,6 +21,7 @@ export default function StickerMenu(props) {
         },
         {
             title: "Completed",
+            icon: imgGreenCheck,
             state: ItemState.STATE_COMPLETED,
             onClick: () => {
                 props.setState(ItemState.STATE_COMPLETED);
@@ -22,6 +29,7 @@ export default function StickerMenu(props) {
         },
         {
             title: "Abort",
+            icon: imgRedCross,
             state: ItemState.STATE_ABORTED,
             onClick: () => {
                 props.setState(ItemState.STATE_ABORTED);
@@ -29,6 +37,7 @@ export default function StickerMenu(props) {
         },
         {
             title: "Reset",
+            icon: imgOppositeArrows,
             state: ItemState.STATE_UNSET,
             onClick: () => {
                 props.setState(ItemState.STATE_UNSET);
