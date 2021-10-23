@@ -7,6 +7,9 @@ import MerchItem from "./Sticker/Sticker";
 import DropDownMenu from "./DropDownMenu/DropDownMenu";
 import KeyManager from "./KeyManager";
 
+import imgStickerAdd from "../Assets/img_file_add.svg";
+import imgArrowsOpposite from "../Assets/img_arrows_opposite.svg";
+
 let nextStickerId = 100;
 
     // Returns a unique sticker ID and icrements the counter by one
@@ -20,9 +23,18 @@ export default function View() {
     const [ dropDownMenuContent, setDropDownMenuContent ] = useState([
         {
             title: "New sticker",
+            icon: imgStickerAdd,
             onClick: () => {
                 closeDropDownMenu();
                 addSticker();
+            }
+        },
+        {
+            title: "Reset stickers",
+            icon: imgArrowsOpposite,
+            onClick: () => {
+                closeDropDownMenu();
+                resetAllStickers();
             }
         }
     ]);
@@ -92,6 +104,16 @@ export default function View() {
     const removeSticker = (id) => {
         setStickers(stickersREF.current.filter((stk) => stk.id !== id));
     }
+
+        // Sets the state of each sticker to 'unset'
+    const resetAllStickers = () => {
+        setStickers(stickersREF.current.map((stk) => {
+            stk.state = ItemState.STATE_UNSET;
+            stk.limitInfo.set = 0;
+            return stk;
+        }));
+    }
+
         // Sets the state of a given sticker
     const setStickerState = (id, state) => {
         setStickers(stickers.map((stk) => {
@@ -99,7 +121,7 @@ export default function View() {
             stk.state = state;
 
             return stk;
-        }))
+        }));
     }
 
         // Sets the limit cooldown timer of a sticker at a certain date
@@ -169,7 +191,7 @@ export default function View() {
                 dropDownMenu.isOpen &&
                 <DropDownMenu
                     position={dropDownMenu.openAt}
-                    items   ={dropDownMenuContent}
+                    items={dropDownMenuContent}
                 />
             }
         </AppContent>

@@ -118,14 +118,6 @@ export default function Sticker(props) {
         stopDragging();
     }
 
-        // Updates the element every 60 seconds to update the cooldown timer
-    /*const updateCooldownTimer = () => {
-        setGELimitField({
-            ...geLimitFieldREF.current,
-            refresh: geLimitFieldREF.current.refresh + 1
-        });
-    }*/
-
         // Starts dragging via DragBox
     const startDragging = () => {
         dragBoxREF.current.beginDrag();
@@ -137,7 +129,7 @@ export default function Sticker(props) {
     }
 
         // Enables title editing upon double-click on the title
-    const handleTitleDoubleClick = (e) => {
+    const handleTitleDoubleClick = () => {
         setNameField({
             ...nameField,
             isEditing: true
