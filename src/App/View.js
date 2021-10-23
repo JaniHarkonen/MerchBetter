@@ -75,7 +75,7 @@ export default function View() {
                     sell: "0"
                 },
                 limitInfo: {
-                    set: (new Date()).toString(),
+                    set: 0,
                     quantity: 13000
                 },
                 state: ItemState.STATE_UNSET
@@ -106,8 +106,8 @@ export default function View() {
     const setStickerLimitTimer = (id, date) => {
         setStickers(stickers.map((stk) => {
             if( stk.id === id )
-            stk.limitInfo.set = date.toString();
-
+            stk.limitInfo.set = date;
+            
             return stk;
         }));
     }
