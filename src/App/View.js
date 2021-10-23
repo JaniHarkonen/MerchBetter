@@ -75,7 +75,7 @@ export default function View() {
                     sell: "0"
                 },
                 limitInfo: {
-                    set: (new Date()).toString(),
+                    set: 0,
                     quantity: 13000
                 },
                 state: ItemState.STATE_UNSET
@@ -100,6 +100,16 @@ export default function View() {
 
             return stk;
         }))
+    }
+
+        // Sets the limit cooldown timer of a sticker at a certain date
+    const setStickerLimitTimer = (id, date) => {
+        setStickers(stickers.map((stk) => {
+            if( stk.id === id )
+            stk.limitInfo.set = date;
+            
+            return stk;
+        }));
     }
 
         // Closes the drop down menu
@@ -142,6 +152,7 @@ export default function View() {
                         viewContext={getViewContext()}
                         removeId={removeSticker}
                         setStateOfId={setStickerState}
+                        setLimitTimerOfId={setStickerLimitTimer}
                     />
                 )
             })

@@ -10,19 +10,24 @@ import StickerMenu from "./StickerMenu";
 import iconRecycleBin from "../../Assets/img_recycle_bin.svg";
 import iconCog from "../../Assets/img_cog.svg";
 import ItemState from "./ItemState.json";
+import EditableDiv from "../Common/EditableDiv";
+import ProgressBar from "../Common/ProgressBar";
 
 export default function Sticker(props) {
-    const [ position, setPosition ]   = useState({ x: 0, y: 0 });   // Position of the sticker
-    const [ dragBox, setDragBox, dragBoxREF ] = useState(null);     // DragBox used to drag the sticker upon mouse down
-    const [ nameField, setNameField, nameFieldREF ] = useState({}); // Name of the item
-    const [ priceFields, setPriceFields ] = useState({});           // Price field inputs
-    const [ isSettingsOpen, openSettings ] = useState(false);       // Whether the settings menu is open
+    const [ position, setPosition ]   = useState({ x: 0, y: 0 });               // Position of the sticker
+    const [ dragBox, setDragBox, dragBoxREF ] = useState(null);                 // DragBox used to drag the sticker upon mouse down
+    const [ nameField, setNameField, nameFieldREF ] = useState({});             // Name of the item
+    const [ priceFields, setPriceFields ] = useState({});                       // Price field inputs
+    const [ geLimitField, setGELimitField, geLimitFieldREF ] = useState({});    // GE-limit info of the item
+    const [ isSettingsOpen, openSettings ] = useState(false);                   // Whether the settings menu is open
     
         // Default dimensions of the merch item sticker
     const defaultDimensions = {
-        width: 256,
-        height: 128
+        width: 264,
+        height: 148
     }
+
+    const geTimeLimit = 4 * 60 * 60 * 1000;
 
         // Default state color lightness values
     const outlineLightness          = "68%";
@@ -64,6 +69,20 @@ export default function Sticker(props) {
             }
         });
 
+            // Sets the GE limit info of the item
+        setGELimitField({
+            quantity: props.itemData.limitInfo.quantity,
+            setAt: props.itemData.limitInfo.set,
+            isEditing: false,
+            refresh: 0,
+            refreshInterval: setInterval(() => {
+                setGELimitField({
+                    ...geLimitFieldREF.current,
+                    refresh: geLimitFieldREF.current.refresh + 1
+                });
+            }, 60000)
+        });
+
             // Handles ENTER press when editing
         document.addEventListener("keydown", handleEnterPress);
         document.addEventListener("mouseup", handleDragEnd);
@@ -72,6 +91,7 @@ export default function Sticker(props) {
             dragBoxREF.current.decommission();
             document.removeEventListener("keydown", handleEnterPress);
             document.removeEventListener("mouseup", handleDragEnd);
+            clearInterval(geLimitFieldREF.current.refreshInterval);
         });
     }, []);
 
@@ -98,6 +118,14 @@ export default function Sticker(props) {
         stopDragging();
     }
 
+        // Updates the element every 60 seconds to update the cooldown timer
+    /*const updateCooldownTimer = () => {
+        setGELimitField({
+            ...geLimitFieldREF.current,
+            refresh: geLimitFieldREF.current.refresh + 1
+        });
+    }*/
+
         // Starts dragging via DragBox
     const startDragging = () => {
         dragBoxREF.current.beginDrag();
@@ -121,6 +149,22 @@ export default function Sticker(props) {
         setNameField({
             ...nameField,
             name: e.target.value
+        });
+    }
+
+        // Enables GE quantity limit editing upon double-click on the quantity
+    const handleGEQuantityLimitDoubleClick = () => {
+        setGELimitField({
+            ...geLimitField,
+            isEditing: true
+        });
+    }
+
+        // Changes the GE quantity limit upon editing
+    const handleGEQuantityLimitInput = (e) => {
+        setGELimitField({
+            ...geLimitField,
+            quantity: e.target.value
         });
     }
 
@@ -156,14 +200,60 @@ export default function Sticker(props) {
         openSettings(!isSettingsOpen);
     }
 
+        // Called upon selecting an item from the drop down menu
+    const handleDropDownSelection = (state) => {
+        let date = ((new Date()).getTime()) + geTimeLimit;
+
+            // Start the cooldown timer when opening a position
+        if( state === ItemState.STATE_OPEN && geLimitFieldREF.current.setAt <= 0 )
+        {
+            props.setLimitTimerOfId(props.itemData.id, date);
+            setGELimitField({
+                ...geLimitFieldREF.current,
+                setAt: date
+            });
+        }
+
+            // Reset the cooldown timer
+        if( state === ItemState.STATE_UNSET )
+        {
+            props.setLimitTimerOfId(props.itemData.id, 0);
+            setGELimitField({
+                ...geLimitFieldREF.current,
+                setAt: 0
+            });
+        }
+
+        openSettings(false);
+        props.setStateOfId(props.itemData.id, state);
+    }
+
         // Returns color of the current state given its lightness
     const getStateColor = (light) => {
         return stateColorStrings[props.itemData.state / 100] + light + ")";
     }
 
+        // Returns the difference between buy and sell price (margin)
+    const getPriceMargin = () => {
+        return (priceFields?.sell?.price - priceFields?.buy?.price) || 0;
+    }
+
+        // Returns the number of milliseconds passed since setting the cooldown timer
+    const getCooldownTimePassed = () => {
+        return (new Date()).getTime() - (geLimitField.setAt - geTimeLimit);
+    }
+
+        // Returns the number of milliseconds left until the end of the cooldown
+    const getCooldownTimeLeft = () => {
+        return geTimeLimit - getCooldownTimePassed();
+    }
+
         // Returns whether an editable field is being edited
     const checkEditing = () => {
-        return nameFieldREF.current.isEditing;
+        return (
+            nameFieldREF.current.isEditing ||
+            geLimitFieldREF.current.isEditing
+        );
     }
 
         // Stops editing all fields
@@ -175,18 +265,19 @@ export default function Sticker(props) {
             isEditing: false,
             name: (nf.name === "") ? nf.previousName : nf.name,
             previousName: (nf.name === "") ? nf.previousName : nf.name
-        })
+        });
+
+        let ge = geLimitFieldREF.current;
+
+        setGELimitField({
+            ...ge,
+            isEditing: false
+        });
     }
 
         // Selects all text of an input field upon focus
     const selectAllTextUponFocus = (e) => {
         e.target.select();
-    }
-
-    const add = (date) => {
-        let d = new Date(Date.parse(date) + 1 * 60 * 60 * 1000);
-
-        return d;
     }
 
     return(
@@ -202,6 +293,7 @@ export default function Sticker(props) {
                 backgroundColor: getStateColor(backgroundLightness)
             }}
         >
+            { /* SETTINGS MENU */ }
             {
                 isSettingsOpen &&
                 <StickerMenu
@@ -210,61 +302,46 @@ export default function Sticker(props) {
                         y: defaultDimensions.height * 0.2 * props.viewContext.zoomFactor
                     }}
                     currentState={props.itemData.state}
-                    setState={(state) => {
-                        openSettings(false);
-                        props.setStateOfId(props.itemData.id, state);
-                    }}
+                    setState={handleDropDownSelection}
                 />
             }
-            <DraggableElement
-                cbMouseDown={startDragging}
-                cbMouseUp={stopDragging}
-            />
+            <DraggableElement cbMouseDown={startDragging} />
 
+            { /* TITLE */ }
             <TitleContainer
                 style={{
                     backgroundColor: getStateColor(titleBackgroundLightness),
                     borderBottomColor: getStateColor(outlineLightness)
                 }}
+                onMouseDown={() => {
+                    if( !nameField.isEditing )
+                    startDragging();
+                }}
             >
-                <DraggableElement
-                    cbMouseDown={startDragging}
-                    cbMouseUp={stopDragging}
-                />
-                <ButtonRemove
-                    onClick={handleRemoval}
-                >
+                <DraggableElement cbMouseDown={startDragging} />
+                <ButtonRemove onClick={handleRemoval}>
                     <FullImage src={iconRecycleBin} />
                 </ButtonRemove>
-                <ButtonSettings
-                    onClick={handleSettingsOpen}
-                >
+                <ButtonSettings onClick={handleSettingsOpen}>
                     <FullImage src={iconCog} />
                 </ButtonSettings>
-                <Title
-                    onDoubleClick={handleTitleDoubleClick}
-                    onMouseDown={() => {
-                                        if( nameField.isEditing === false )
-                                        startDragging();
-                                }}
-                    onMouseUp={stopDragging}
-                    style={{
-                        fontSize: props.viewContext.zoomFactor * 16 + "px"
+                <EditableDiv
+                    text={nameField.name}
+                    isEditing={nameField.isEditing}
+                    callbacks={{
+                        edit: handleTitleDoubleClick,
+                        onChange: handleTitleInput,
+                        onFocus: selectAllTextUponFocus,
+                        onBlur: unFocusEditFields
                     }}
-                >
-                    {
-                        (nameField.isEditing === false)
-                        ? nameField.name
-                        : <TitleEditField
-                            value={nameField.name}
-                            onChange={handleTitleInput}
-                            onFocus={selectAllTextUponFocus}
-                            onBlur={unFocusEditFields}
-                          />
-                    }
-                </Title>
+                    style={{
+                        text: { fontSize: props.viewContext.zoomFactor * 16 + "px" },
+                        inputField: { fontSize: props.viewContext.zoomFactor * 16 + "px" }
+                    }}
+                />
             </TitleContainer>
 
+            { /* PRICE INFO */ }
             <PriceInfoContainer>
                 <PriceInputFieldContainer
                     style={{
@@ -305,9 +382,94 @@ export default function Sticker(props) {
                         }}
                     />
                 </PriceInputFieldContainer>
+                <ProfitMaringContainer onMouseDown={startDragging}>
+                    <HalfPaneWrapper
+                        style={{
+                            fontSize: props.viewContext.zoomFactor * 14 + "px",
+                            color: (getPriceMargin() > 0) ? "green" : "red"
+                        }}
+                    >
+                        {(getPriceMargin() > 0) ? "+" + getPriceMargin() : getPriceMargin()}
+                    </HalfPaneWrapper>
+                </ProfitMaringContainer>
             </PriceInfoContainer>
-            GE Limit: {props.itemData.limitInfo.quantity}<br />
-            Limit reset: {add(props.itemData.limitInfo.set).getHours()}
+
+            { /* GE-LIMIT */ }
+            <GELimitWrapper
+                onMouseDown={() => {
+                    if( !geLimitField.isEditing )
+                    startDragging();
+                }}
+            >
+                <GEQuantityLimitWrapper>
+
+                    { /* Left-hand side */ }
+                    <GEQuantityLimit>
+                        <GEQuantityLimitTitle
+                            style={{
+                                fontSize: props.viewContext.zoomFactor * 16 +"px"
+                            }}
+                        >
+                            GE-Limit:
+                        </GEQuantityLimitTitle>
+                        <GEQuantityLimitAmount>
+                            <EditableDiv
+                                text={geLimitField.quantity}
+                                isEditing={geLimitField.isEditing}
+                                callbacks={{
+                                    edit: handleGEQuantityLimitDoubleClick,
+                                    onChange: handleGEQuantityLimitInput,
+                                    onFocus: selectAllTextUponFocus,
+                                    onBlur: unFocusEditFields
+                                }}
+                                style={{
+                                    text: { fontSize: props.viewContext.zoomFactor * 14 + "px" },
+                                    inputField: { fontSize: props.viewContext.zoomFactor * 14 + "px" }
+                                }}
+                            />
+                        </GEQuantityLimitAmount>
+                    </GEQuantityLimit>
+
+                    {/* Right-hand size (using the same styled component) */}
+                    <GEQuantityLimitAmount
+                        style={{
+                            color: (getPriceMargin() > 0) ? "green" : "red",
+                            fontSize: props.viewContext.zoomFactor * 14 + "px"
+                        }}
+                    >
+                        {(getPriceMargin() > 0) ? "+" + getPriceMargin() * geLimitField.quantity : getPriceMargin() * geLimitField.quantity}
+                    </GEQuantityLimitAmount>
+                </GEQuantityLimitWrapper>
+
+                { /* Timer cooldown */ }
+                <GELimitTimerWrapper>
+                    <GELimitTime>
+                        <ProgressBar
+                            value={{
+                                current: getCooldownTimePassed(),
+                                max: geTimeLimit
+                            }}
+                            color={{
+                                finished: "green",
+                                left: "red"
+                            }}
+                            title={
+                                (getCooldownTimePassed() >= geTimeLimit)
+                                ? "READY"
+                                : `Cooldown ( ${Math.floor(getCooldownTimeLeft() / 1000 / 60 / 60)}:
+                                              ${Math.floor(getCooldownTimeLeft() / 1000 / 60) % 60} )`
+                            }
+                            style={{
+                                title: {
+                                    fontSize: props.viewContext.zoomFactor * 12 + "px",
+                                    fontColor: "white"
+                                }
+                            }}
+                        >
+                        </ProgressBar>
+                    </GELimitTime>
+                </GELimitTimerWrapper>
+            </GELimitWrapper>
         </Wrapper>
     );
 }
@@ -342,26 +504,6 @@ const TitleContainer = styled.div`
     border-top-right-radius : 12px;
 `;
 
-const Title = styled.div`
-    position: relative;
-
-    &:hover {
-        cursor: pointer;
-        border-style: dashed;
-        border-width: 1px;
-    }
-
-    user-select: none;
-`;
-
-const TitleEditField = styled.input`
-    position: relative;
-    width   : auto;
-
-    display         : flex;
-    justify-content : center;
-`;
-
 const PriceInfoContainer = styled.div`
     position: relative;
     width   : 100%;
@@ -370,7 +512,28 @@ const PriceInfoContainer = styled.div`
 
 const PriceInputFieldContainer = styled.div`
     position: relative;
+    width   : 48%;
+`;
+
+const ProfitMaringContainer = styled.div`
+    position: absolute;
+    right   : 0px;
+    top     : 0px;
+    width   : 48%;
+    height  : 100%;
+`;
+
+const HalfPaneWrapper = styled.div`
+    position: absolute;
+    left    : 0px;
+    bottom  : 0px;
     width   : 100%;
+    height  : 50%;
+
+    display     : flex;
+    align-items : center;
+
+    font-weight: bold;
 `;
 
 const TitleBarButton = styled.div`
@@ -402,4 +565,71 @@ const FullImage = styled.img`
     top     : 0px;
     width   : 100%;
     height  : 100%;
+`;
+
+const GELimitWrapper = styled.div`
+    position: relative;
+    width   : 100%;
+    height  : 35%;
+
+    border-bottom-left-radius   : 12px;
+    border-bottom-right-radius  : 12px;
+`;
+
+const GEQuantityLimitWrapper = styled.div`
+    position: relative;
+    width   : 100%;
+    height  : 50%;
+`;
+
+const GEQuantityLimit = styled.div`
+    position: relative;
+    width   : 50%;
+    height  : 100%;
+`;
+
+const GEQuantityLimitTitle = styled.div`
+    position: absolute;
+    left    : 0px;
+    top     : 0px;
+    width   : 50%;
+    height  : 100%;
+`;
+
+const GEQuantityLimitAmount = styled.div`
+    position: absolute;
+    right   : 0px;
+    top     : 0px;
+    width   : 50%;
+    height  : 100%;
+
+    display     : flex;
+    align-items : center;
+
+    font-weight : bold;
+    overflow    : hidden;
+`;
+
+const GELimitTimerWrapper = styled.div`
+    position: absolute;
+    left    : 0px;
+    bottom  : 0px;
+    width   : 100%;
+    height  : 50%;
+
+    display         : flex;
+    justify-content : center;
+    align-items     : center;
+`;
+
+const GELimitTime = styled.div`
+    position: relative;
+    width   : 75%;
+    height  : 50%;
+    
+    border-style: solid;
+    border-color: white;
+    border-radius: 4px;
+    border-width: 1px;
+    overflow: hidden;
 `;
