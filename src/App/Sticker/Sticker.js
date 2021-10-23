@@ -95,6 +95,25 @@ export default function Sticker(props) {
         });
     }, []);
 
+        // Updates the component upon external changes to the state
+    useEffect(() => {
+
+            // Sets the GE limit info of the item
+        setGELimitField({
+            quantity: props.itemData.limitInfo.quantity,
+            setAt: props.itemData.limitInfo.set,
+            isEditing: false,
+            refresh: 0,
+            refreshInterval: setInterval(() => {
+                setGELimitField({
+                    ...geLimitFieldREF.current,
+                    refresh: geLimitFieldREF.current.refresh + 1
+                });
+            }, 60000)
+        });
+    }, [props.itemData.state]);
+
+
         // DragBox calls this to update the state of this merch item
     const updatePosition = (context) => {
         setPosition({
@@ -275,8 +294,8 @@ export default function Sticker(props) {
     return(
         <Wrapper
             style={{
-                left    : position.x * props.viewContext.zoomFactor + "px",
-                top     : position.y * props.viewContext.zoomFactor + "px",
+                left    : (position.x + props.viewContext.origin.x) * props.viewContext.zoomFactor + "px",
+                top     : (position.y + props.viewContext.origin.y) * props.viewContext.zoomFactor + "px",
                 width   : defaultDimensions.width * props.viewContext.zoomFactor,
                 height  : defaultDimensions.height * props.viewContext.zoomFactor,
                 
@@ -297,7 +316,6 @@ export default function Sticker(props) {
                     setState={handleDropDownSelection}
                 />
             }
-            <DraggableElement cbMouseDown={startDragging} />
 
             { /* TITLE */ }
             <TitleContainer
@@ -310,7 +328,6 @@ export default function Sticker(props) {
                     startDragging();
                 }}
             >
-                <DraggableElement cbMouseDown={startDragging} />
                 <ButtonRemove onClick={handleRemoval}>
                     <FullImage src={iconRecycleBin} />
                 </ButtonRemove>
@@ -344,9 +361,7 @@ export default function Sticker(props) {
                         title       ="Buy: "
                         value       ={priceFields.buy?.price}
                         callbacks   ={{
-                            onChange: handleBuyPriceInput,
-                            startDrag: startDragging,
-                            stopDrag: stopDragging
+                            onChange: handleBuyPriceInput
                         }}
                         style       ={{
                             title: { fontSize: props.viewContext.zoomFactor * 16 + "px" },
@@ -364,9 +379,7 @@ export default function Sticker(props) {
                         title="Sell: "
                         value={priceFields.sell?.price}
                         callbacks={{
-                            onChange: handleSellPriceInput,
-                            startDrag: startDragging,
-                            stopDrag: stopDragging
+                            onChange: handleSellPriceInput
                         }}
                         style={{
                             title: { fontSize: props.viewContext.zoomFactor * 16 + "px" },
@@ -374,7 +387,7 @@ export default function Sticker(props) {
                         }}
                     />
                 </PriceInputFieldContainer>
-                <ProfitMaringContainer onMouseDown={startDragging}>
+                <ProfitMaringContainer>
                     <HalfPaneWrapper
                         style={{
                             fontSize: props.viewContext.zoomFactor * 14 + "px",
@@ -387,12 +400,7 @@ export default function Sticker(props) {
             </PriceInfoContainer>
 
             { /* GE-LIMIT */ }
-            <GELimitWrapper
-                onMouseDown={() => {
-                    if( !geLimitField.isEditing )
-                    startDragging();
-                }}
-            >
+            <GELimitWrapper>
                 <GEQuantityLimitWrapper>
 
                     { /* Left-hand side */ }
@@ -494,6 +502,8 @@ const TitleContainer = styled.div`
     border-bottom-width     : 1px;
     border-top-left-radius  : 12px;
     border-top-right-radius : 12px;
+
+    cursor: grab;
 `;
 
 const PriceInfoContainer = styled.div`
