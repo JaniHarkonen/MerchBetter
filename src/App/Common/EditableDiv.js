@@ -7,7 +7,6 @@ export default function EditableDiv(props) {
             onDoubleClick={props.callbacks?.edit}
             style={props.isEditing ? {
                 display: "flex",
-                //alignItems: "center"
             }: {}}
         >
             {
@@ -41,10 +40,7 @@ const Wrapper = styled.div`
 const TextWrapper = styled.div`
     position: relative;
 
-    cursor: pointer;
-
     &:hover {
-        cursor: pointer;
         border-style: dashed;
         border-width: 1px;
     }

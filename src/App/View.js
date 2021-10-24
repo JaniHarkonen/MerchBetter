@@ -9,6 +9,7 @@ import KeyManager from "./KeyManager";
 
 import imgStickerAdd from "../Assets/img_file_add.svg";
 import imgArrowsOpposite from "../Assets/img_arrows_opposite.svg";
+import DragBox from "./DragBox/DragBox";
 
 let nextStickerId = 100;
 
@@ -19,6 +20,7 @@ function getNextStickerId() {
 
 export default function View() {
 
+    const [ viewPanner, setViewPanner, viewPannerREF ] = useState(null);
     const [ stickers, setStickers, stickersREF ] = useState([]);
     const [ dropDownMenuContent, setDropDownMenuContent ] = useState([
         {
@@ -52,6 +54,12 @@ export default function View() {
 
 
     useEffect(() => {
+        setViewPanner(new DragBox({
+            document: document,
+            callback: updateViewPosition,
+            gridSize: 16
+        }));
+
         document.addEventListener("wheel", updateZoom);
 
         return(() => {
@@ -66,11 +74,25 @@ export default function View() {
         if( e.deltaY > 0 ) setZoomFactor(zoomFactorREF.current - zoomNotch);
     }
 
+        // Updates the position of the view upon panning
+    const updateViewPosition = (context) => {
+        setViewOrigin({
+            x: context.x,
+            y: context.y
+        });
+    }
+
         // Opens the drop down menu upon right click
     const handleMenuOpen = (e) => {
         if( e.button === 2 )
         openDropDownMenu(e.pageX, e.pageY);
-        else closeDropDownMenu();
+        else
+        {
+            if( e.button === 0 && e.shiftKey === true )
+            startDragging(e);
+
+            closeDropDownMenu();
+        }
     }
 
         // Returns a new sticker with default settings
@@ -88,7 +110,7 @@ export default function View() {
                 },
                 limitInfo: {
                     set: 0,
-                    quantity: 13000
+                    quantity: 0
                 },
                 state: ItemState.STATE_UNSET
             }
@@ -153,6 +175,16 @@ export default function View() {
         });
     }
 
+        // Starts dragging the view upon SPACE + mouse press
+    const startDragging = () => {
+        viewPannerREF.current.beginDrag();
+    }
+
+        // Stops dragging the view
+    const stopDragging = () => {
+        viewPannerREF.current.stopDrag();
+    }
+
         // Returns current view context
     const getViewContext = () => {
         return (
@@ -182,7 +214,9 @@ export default function View() {
     }
 
     return (
-        <AppContent>
+        <AppContent
+        onMouseUp={stopDragging}
+        >
             <DropDownMenuArea
                 onMouseDown={handleMenuOpen}
             />

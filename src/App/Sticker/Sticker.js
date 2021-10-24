@@ -3,7 +3,6 @@ import useState from "react-usestateref";
 import styled from "styled-components";
 
 import DragBox from "../DragBox/DragBox";
-import DraggableElement from "../DragBox/DraggableElement";
 import SubInputField from "../Common/SubInputField";
 import StickerMenu from "./StickerMenu";
 
@@ -14,7 +13,10 @@ import EditableDiv from "../Common/EditableDiv";
 import ProgressBar from "../Common/ProgressBar";
 
 export default function Sticker(props) {
-    const [ position, setPosition ]   = useState({ x: 0, y: 0 });               // Position of the sticker
+    const [ position, setPosition ] = useState({
+        x: -props.viewContext?.origin?.x || 0,
+        y: -props.viewContext?.origin?.y || 0
+    });
     const [ dragBox, setDragBox, dragBoxREF ] = useState(null);                 // DragBox used to drag the sticker upon mouse down
     const [ nameField, setNameField, nameFieldREF ] = useState({});             // Name of the item
     const [ priceFields, setPriceFields ] = useState({});                       // Price field inputs
@@ -94,6 +96,15 @@ export default function Sticker(props) {
             clearInterval(geLimitFieldREF.current.refreshInterval);
         });
     }, []);
+
+        // Updates the component upon external changes to the state
+    useEffect(() => {
+        setGELimitField({
+            ...geLimitFieldREF.current,
+            setAt: props.itemData.limitInfo.set
+        });
+    }, [props.itemData.state]);
+
 
         // DragBox calls this to update the state of this merch item
     const updatePosition = (context) => {
@@ -275,8 +286,8 @@ export default function Sticker(props) {
     return(
         <Wrapper
             style={{
-                left    : position.x * props.viewContext.zoomFactor + "px",
-                top     : position.y * props.viewContext.zoomFactor + "px",
+                left    : (position.x + props.viewContext.origin.x) * props.viewContext.zoomFactor + "px",
+                top     : (position.y + props.viewContext.origin.y) * props.viewContext.zoomFactor + "px",
                 width   : defaultDimensions.width * props.viewContext.zoomFactor,
                 height  : defaultDimensions.height * props.viewContext.zoomFactor,
                 
@@ -297,7 +308,6 @@ export default function Sticker(props) {
                     setState={handleDropDownSelection}
                 />
             }
-            <DraggableElement cbMouseDown={startDragging} />
 
             { /* TITLE */ }
             <TitleContainer
@@ -305,32 +315,34 @@ export default function Sticker(props) {
                     backgroundColor: getStateColor(titleBackgroundLightness),
                     borderBottomColor: getStateColor(outlineLightness)
                 }}
-                onMouseDown={() => {
-                    if( !nameField.isEditing )
-                    startDragging();
-                }}
             >
-                <DraggableElement cbMouseDown={startDragging} />
                 <ButtonRemove onClick={handleRemoval}>
                     <FullImage src={iconRecycleBin} />
                 </ButtonRemove>
                 <ButtonSettings onClick={handleSettingsOpen}>
                     <FullImage src={iconCog} />
                 </ButtonSettings>
-                <EditableDiv
-                    text={nameField.name}
-                    isEditing={nameField.isEditing}
-                    callbacks={{
-                        edit: handleTitleDoubleClick,
-                        onChange: handleTitleInput,
-                        onFocus: selectAllTextUponFocus,
-                        onBlur: unFocusEditFields
+                <GrabBar
+                    onMouseDown={() => {
+                        if( !nameField.isEditing )
+                        startDragging();
                     }}
-                    style={{
-                        text: { fontSize: props.viewContext.zoomFactor * 16 + "px" },
-                        inputField: { fontSize: props.viewContext.zoomFactor * 16 + "px" }
-                    }}
-                />
+                >
+                    <EditableDiv
+                        text={nameField.name}
+                        isEditing={nameField.isEditing}
+                        callbacks={{
+                            edit: handleTitleDoubleClick,
+                            onChange: handleTitleInput,
+                            onFocus: selectAllTextUponFocus,
+                            onBlur: unFocusEditFields
+                        }}
+                        style={{
+                            text: { fontSize: props.viewContext.zoomFactor * 16 + "px" },
+                            inputField: { fontSize: props.viewContext.zoomFactor * 16 + "px" }
+                        }}
+                    />
+                </GrabBar>
             </TitleContainer>
 
             { /* PRICE INFO */ }
@@ -344,9 +356,7 @@ export default function Sticker(props) {
                         title       ="Buy: "
                         value       ={priceFields.buy?.price}
                         callbacks   ={{
-                            onChange: handleBuyPriceInput,
-                            startDrag: startDragging,
-                            stopDrag: stopDragging
+                            onChange: handleBuyPriceInput
                         }}
                         style       ={{
                             title: { fontSize: props.viewContext.zoomFactor * 16 + "px" },
@@ -364,9 +374,7 @@ export default function Sticker(props) {
                         title="Sell: "
                         value={priceFields.sell?.price}
                         callbacks={{
-                            onChange: handleSellPriceInput,
-                            startDrag: startDragging,
-                            stopDrag: stopDragging
+                            onChange: handleSellPriceInput
                         }}
                         style={{
                             title: { fontSize: props.viewContext.zoomFactor * 16 + "px" },
@@ -374,7 +382,7 @@ export default function Sticker(props) {
                         }}
                     />
                 </PriceInputFieldContainer>
-                <ProfitMaringContainer onMouseDown={startDragging}>
+                <ProfitMaringContainer>
                     <HalfPaneWrapper
                         style={{
                             fontSize: props.viewContext.zoomFactor * 14 + "px",
@@ -387,12 +395,7 @@ export default function Sticker(props) {
             </PriceInfoContainer>
 
             { /* GE-LIMIT */ }
-            <GELimitWrapper
-                onMouseDown={() => {
-                    if( !geLimitField.isEditing )
-                    startDragging();
-                }}
-            >
+            <GELimitWrapper>
                 <GEQuantityLimitWrapper>
 
                     { /* Left-hand side */ }
@@ -487,13 +490,26 @@ const TitleContainer = styled.div`
     height  : 20%;
 
     display         : flex;
-    justify-content : center;
     align-items     : center;
 
     border-bottom-style     : solid;
     border-bottom-width     : 1px;
     border-top-left-radius  : 12px;
     border-top-right-radius : 12px;
+
+    cursor: grab;
+`;
+
+const GrabBar = styled.div`
+    position: absolute;
+    left    : 12%;
+    top     : 0px;
+    width   : 76%;
+    height  : 100%;
+
+    display         : flex;
+    justify-content : center;
+    align-items     : center;
 `;
 
 const PriceInfoContainer = styled.div`
