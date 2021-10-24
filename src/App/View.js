@@ -110,7 +110,7 @@ export default function View() {
                 },
                 limitInfo: {
                     set: 0,
-                    quantity: 13000
+                    quantity: 0
                 },
                 state: ItemState.STATE_UNSET
             }

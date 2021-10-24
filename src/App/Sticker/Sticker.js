@@ -3,7 +3,6 @@ import useState from "react-usestateref";
 import styled from "styled-components";
 
 import DragBox from "../DragBox/DragBox";
-import DraggableElement from "../DragBox/DraggableElement";
 import SubInputField from "../Common/SubInputField";
 import StickerMenu from "./StickerMenu";
 
@@ -14,7 +13,10 @@ import EditableDiv from "../Common/EditableDiv";
 import ProgressBar from "../Common/ProgressBar";
 
 export default function Sticker(props) {
-    const [ position, setPosition ]   = useState({ x: 0, y: 0 });               // Position of the sticker
+    const [ position, setPosition ] = useState({
+        x: -props.viewContext?.origin?.x || 0,
+        y: -props.viewContext?.origin?.y || 0
+    });
     const [ dragBox, setDragBox, dragBoxREF ] = useState(null);                 // DragBox used to drag the sticker upon mouse down
     const [ nameField, setNameField, nameFieldREF ] = useState({});             // Name of the item
     const [ priceFields, setPriceFields ] = useState({});                       // Price field inputs
@@ -97,19 +99,9 @@ export default function Sticker(props) {
 
         // Updates the component upon external changes to the state
     useEffect(() => {
-
-            // Sets the GE limit info of the item
         setGELimitField({
-            quantity: props.itemData.limitInfo.quantity,
-            setAt: props.itemData.limitInfo.set,
-            isEditing: false,
-            refresh: 0,
-            refreshInterval: setInterval(() => {
-                setGELimitField({
-                    ...geLimitFieldREF.current,
-                    refresh: geLimitFieldREF.current.refresh + 1
-                });
-            }, 60000)
+            ...geLimitFieldREF.current,
+            setAt: props.itemData.limitInfo.set
         });
     }, [props.itemData.state]);
 
@@ -323,10 +315,6 @@ export default function Sticker(props) {
                     backgroundColor: getStateColor(titleBackgroundLightness),
                     borderBottomColor: getStateColor(outlineLightness)
                 }}
-                onMouseDown={() => {
-                    if( !nameField.isEditing )
-                    startDragging();
-                }}
             >
                 <ButtonRemove onClick={handleRemoval}>
                     <FullImage src={iconRecycleBin} />
@@ -334,20 +322,27 @@ export default function Sticker(props) {
                 <ButtonSettings onClick={handleSettingsOpen}>
                     <FullImage src={iconCog} />
                 </ButtonSettings>
-                <EditableDiv
-                    text={nameField.name}
-                    isEditing={nameField.isEditing}
-                    callbacks={{
-                        edit: handleTitleDoubleClick,
-                        onChange: handleTitleInput,
-                        onFocus: selectAllTextUponFocus,
-                        onBlur: unFocusEditFields
+                <GrabBar
+                    onMouseDown={() => {
+                        if( !nameField.isEditing )
+                        startDragging();
                     }}
-                    style={{
-                        text: { fontSize: props.viewContext.zoomFactor * 16 + "px" },
-                        inputField: { fontSize: props.viewContext.zoomFactor * 16 + "px" }
-                    }}
-                />
+                >
+                    <EditableDiv
+                        text={nameField.name}
+                        isEditing={nameField.isEditing}
+                        callbacks={{
+                            edit: handleTitleDoubleClick,
+                            onChange: handleTitleInput,
+                            onFocus: selectAllTextUponFocus,
+                            onBlur: unFocusEditFields
+                        }}
+                        style={{
+                            text: { fontSize: props.viewContext.zoomFactor * 16 + "px" },
+                            inputField: { fontSize: props.viewContext.zoomFactor * 16 + "px" }
+                        }}
+                    />
+                </GrabBar>
             </TitleContainer>
 
             { /* PRICE INFO */ }
@@ -495,7 +490,6 @@ const TitleContainer = styled.div`
     height  : 20%;
 
     display         : flex;
-    justify-content : center;
     align-items     : center;
 
     border-bottom-style     : solid;
@@ -504,6 +498,18 @@ const TitleContainer = styled.div`
     border-top-right-radius : 12px;
 
     cursor: grab;
+`;
+
+const GrabBar = styled.div`
+    position: absolute;
+    left    : 12%;
+    top     : 0px;
+    width   : 76%;
+    height  : 100%;
+
+    display         : flex;
+    justify-content : center;
+    align-items     : center;
 `;
 
 const PriceInfoContainer = styled.div`
