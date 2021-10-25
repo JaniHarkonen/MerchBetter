@@ -6,11 +6,12 @@ import ItemState from "./Sticker/ItemState.json";
 import MerchItem from "./Sticker/Sticker";
 import DropDownMenu from "./DropDownMenu/DropDownMenu";
 import KeyManager from "./KeyManager";
+import DragBox from "./DragBox/DragBox";
+import StateManager from "./StateManager";
 
 import imgStickerAdd from "../Assets/img_file_add.svg";
 import imgArrowsOpposite from "../Assets/img_arrows_opposite.svg";
-import DragBox from "./DragBox/DragBox";
-import StateManager from "./StateManager";
+import imgMagGlass from "../Assets/img_mag_glass.svg";
 
 let nextStickerId = 100;
 
@@ -39,6 +40,15 @@ export default function View() {
             onClick: () => {
                 closeDropDownMenu();
                 resetAllStickers();
+            }
+        },
+        {
+            title: "Reset zoom",
+            icon: imgMagGlass,
+            onClick: () => {
+                closeDropDownMenu();
+                setZoomFactor(1.0);
+                submitChangesZoom(1.0);
             }
         }
     ]);
@@ -119,10 +129,15 @@ export default function View() {
         let newzoom = zoomFactorREF.current - (Math.sign(e.deltaY) * zoomNotch);
 
         setZoomFactor(newzoom);
+        submitChangesZoom(newzoom);
+    }
+
+        // Submits changes to the zoom factor
+    const submitChangesZoom = (zoom) => {
         stateManagerREF.current.submitChanges({
             view: {
                 ...stateManagerREF.current.getState().view,
-                zoomFactor: newzoom
+                zoomFactor: zoom
             }
         });
     }
