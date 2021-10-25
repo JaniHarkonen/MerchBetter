@@ -25,7 +25,7 @@ function createWindow() {
         }
     });
 
-    //win.removeMenu();
+    win.removeMenu();
     win.loadURL(startUrl);
 }
 
