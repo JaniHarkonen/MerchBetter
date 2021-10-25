@@ -13,13 +13,13 @@ import EditableDiv from "../Common/EditableDiv";
 import ProgressBar from "../Common/ProgressBar";
 
 export default function Sticker(props) {
-    const [ position, setPosition ] = useState({
-        x: -props.viewContext?.origin?.x || 0,
-        y: -props.viewContext?.origin?.y || 0
+    const [ position, setPosition, positionREF ] = useState({
+        x: props.itemData.position?.x || -props.viewContext?.origin?.x,
+        y: props.itemData.position?.y || -props.viewContext?.origin?.y
     });
     const [ dragBox, setDragBox, dragBoxREF ] = useState(null);                 // DragBox used to drag the sticker upon mouse down
     const [ nameField, setNameField, nameFieldREF ] = useState({});             // Name of the item
-    const [ priceFields, setPriceFields ] = useState({});                       // Price field inputs
+    const [ priceFields, setPriceFields, priceFieldsREF ] = useState({});       // Price field inputs
     const [ geLimitField, setGELimitField, geLimitFieldREF ] = useState({});    // GE-limit info of the item
     const [ isSettingsOpen, openSettings ] = useState(false);                   // Whether the settings menu is open
     
@@ -30,6 +30,7 @@ export default function Sticker(props) {
     }
 
     const geTimeLimit = 4 * 60 * 60 * 1000;
+    const SAVE_FREQUENCY = 2000;
 
         // Default state color lightness values
     const outlineLightness          = "68%";
@@ -48,7 +49,9 @@ export default function Sticker(props) {
         let dbox = new DragBox({
             document: document,
             callback: updatePosition,
-            gridSize: 16
+            gridSize: 16,
+            x: position.x,
+            y: position.y
         });
         setDragBox(dbox);
 
@@ -89,11 +92,34 @@ export default function Sticker(props) {
         document.addEventListener("keydown", handleEnterPress);
         document.addEventListener("mouseup", handleDragEnd);
 
+        var saveInterval = setInterval(() => {
+            props.getStateManager().submitChanges({
+                stickers: {
+                    ...props.getStateManager().getState().stickers,
+                    [props.itemData.id]: {
+                        key: props.itemData.key,
+                        name: nameFieldREF.current.name,
+                        priceInfo: {
+                            buy: priceFieldsREF.current.buy.price,
+                            sell: priceFieldsREF.current.sell.price
+                        },
+                        limitInfo: {
+                            set: geLimitFieldREF.current.setAt,
+                            quantity: geLimitFieldREF.current.quantity
+                        },
+                        state: props.itemData.state,
+                        position: positionREF.current
+                    }
+                }
+            });
+        }, SAVE_FREQUENCY);
+
         return(() => {
             dragBoxREF.current.decommission();
             document.removeEventListener("keydown", handleEnterPress);
             document.removeEventListener("mouseup", handleDragEnd);
             clearInterval(geLimitFieldREF.current.refreshInterval);
+            clearInterval(saveInterval);
         });
     }, []);
 
@@ -286,10 +312,10 @@ export default function Sticker(props) {
     return(
         <Wrapper
             style={{
-                left    : (position.x + props.viewContext.origin.x) * props.viewContext.zoomFactor + "px",
-                top     : (position.y + props.viewContext.origin.y) * props.viewContext.zoomFactor + "px",
-                width   : defaultDimensions.width * props.viewContext.zoomFactor,
-                height  : defaultDimensions.height * props.viewContext.zoomFactor,
+                left    : (position.x + props.viewContext.origin?.x) * props.viewContext?.zoomFactor + "px",
+                top     : (position.y + props.viewContext.origin?.y) * props.viewContext?.zoomFactor + "px",
+                width   : defaultDimensions.width * props.viewContext?.zoomFactor,
+                height  : defaultDimensions.height * props.viewContext?.zoomFactor,
                 
                 borderColor: getStateColor(outlineLightness),
 
@@ -471,13 +497,15 @@ export default function Sticker(props) {
 
 const Wrapper = styled.div`
     position: absolute;
-
-    background-color: white;
     z-index         : 1;
 
     border-style    : solid;
     border-width    : 1px;
     border-radius   : 12px;
+
+    background-color: white;
+    color           : black;
+    font-weight     : normal;
 
     &:hover {
         z-index: 1000;

@@ -81,6 +81,8 @@ const Wrapper = styled.div`
 
     background-color: white;
     overflow        : hidden;
+    color           : black;
+    font-weight     : normal;
 
     z-index : 5000;
 `;

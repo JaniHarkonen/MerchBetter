@@ -4,6 +4,8 @@ export default class DragBox {
             callback: () => { },
             updateInterval: 16,
             gridSize: 1,
+            x: 0,
+            y: 0,
             ...settings
         };
 
@@ -15,8 +17,8 @@ export default class DragBox {
         this.gridSize = sets.gridSize;              // Size of the grid to snap the element to (default: 1)
 
         this.position = {
-            x: 0,
-            y: 0,
+            x: sets.x,
+            y: sets.y,
             xoff: 0,
             yoff: 0
         };
