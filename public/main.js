@@ -17,7 +17,7 @@ function createWindow() {
         width: 1280,
         height: 720,
         resizable: true,
-        icon: path.join(__dirname, "./logo_dumpem.png"),
+        icon: path.join(__dirname, "./logo_merchbetter.png"),
         webPreferences: {
             nodeIntegration: true,
             enableRemoteModule: true,

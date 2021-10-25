@@ -332,6 +332,7 @@ const AppContent = styled.div`
     display         : flex;
     justify-content : center;
     align-items     : center;
+    overflow        : hidden;
 
     color       : rgba(0, 0, 0, 0.25);
     font-weight : bold;
