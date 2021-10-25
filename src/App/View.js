@@ -10,6 +10,7 @@ import KeyManager from "./KeyManager";
 import imgStickerAdd from "../Assets/img_file_add.svg";
 import imgArrowsOpposite from "../Assets/img_arrows_opposite.svg";
 import DragBox from "./DragBox/DragBox";
+import StateManager from "./StateManager";
 
 let nextStickerId = 100;
 
@@ -20,6 +21,7 @@ function getNextStickerId() {
 
 export default function View() {
 
+    const [ stateManager, setStateManager, stateManagerREF ] = useState(null);
     const [ viewPanner, setViewPanner, viewPannerREF ] = useState(null);
     const [ stickers, setStickers, stickersREF ] = useState([]);
     const [ dropDownMenuContent, setDropDownMenuContent ] = useState([
@@ -60,18 +62,69 @@ export default function View() {
             gridSize: 16
         }));
 
+        let sm = new StateManager(1000);
+        sm.init();
+
+            // If a state file doesn't exist, create it
+        if( sm.loadState() === null )
+        {
+            sm.submitChanges({
+                view: {
+                    ...getViewContext(),
+                    nextStickerId: nextStickerId
+                },
+                stickers: {}
+            });
+        }
+        else
+        {
+            sm.loadState();
+
+                // Load stickers
+            let stkrs_json = sm.getState().stickers;
+            let stkrs_arr = [];
+            for( let key of Object.keys(stkrs_json) )
+            {
+                let stkr = stkrs_json[key];
+                stkrs_arr.push({
+                    id: key,
+                    ...stkr,
+                    key: KeyManager.getKey()
+                });
+            }
+
+                // Load view context
+            setViewContext({
+                ...sm.getState().view,
+                stateManager: sm
+            });
+            nextStickerId = sm.getState().view.nextStickerId;
+
+            setStickers(stkrs_arr);
+        }
+
+        setStateManager(sm);
+
         document.addEventListener("wheel", updateZoom);
 
         return(() => {
             document.removeEventListener("wheel", updateZoom);
+            sm.decommission();
         })
     }, []);
 
 
         // Update zoom level based on mouse wheel
     const updateZoom = (e) => {
-        if( e.deltaY < 0 ) setZoomFactor(zoomFactorREF.current + zoomNotch);
-        if( e.deltaY > 0 ) setZoomFactor(zoomFactorREF.current - zoomNotch);
+        let newzoom = zoomFactorREF.current - (Math.sign(e.deltaY) * zoomNotch);
+
+        setZoomFactor(newzoom);
+        stateManagerREF.current.submitChanges({
+            view: {
+                ...stateManagerREF.current.getState().view,
+                zoomFactor: newzoom
+            }
+        });
     }
 
         // Updates the position of the view upon panning
@@ -112,7 +165,11 @@ export default function View() {
                     set: 0,
                     quantity: 0
                 },
-                state: ItemState.STATE_UNSET
+                state: ItemState.STATE_UNSET,
+                position: {
+                    x: 0,
+                    y: 0
+                }
             }
         );
     }
@@ -120,11 +177,18 @@ export default function View() {
         // Adds a new merch item sticker to the view
     const addSticker = () => {
         setStickers(stickersREF.current.concat(makeDefaultSticker()));
+        stateManagerREF.current.submitChanges({
+            view: {
+                ...stateManagerREF.current.getState().view,
+                nextStickerId: nextStickerId
+            }
+        });
     }
 
         // Removes a sticker given its ID
     const removeSticker = (id) => {
         setStickers(stickersREF.current.filter((stk) => stk.id !== id));
+        stateManagerREF.current.removeField(["stickers", "" + id]);
     }
 
         // Sets the state of each sticker to 'unset'
@@ -163,7 +227,7 @@ export default function View() {
             isOpen: false
         });
     }
-
+    
         // Opens the drop down menu at a given location
     const openDropDownMenu = (x, y) => {
         setDropDownMenu({
@@ -189,10 +253,17 @@ export default function View() {
     const getViewContext = () => {
         return (
             {
-                zoomFactor: zoomFactor,
-                origin: viewOrigin
+                zoomFactor: zoomFactorREF.current,
+                origin: viewOriginREF.current,
+                stateManager: stateManagerREF.current
             }
         )
+    }
+
+        // Sets the view context
+    const setViewContext = (context) => {
+        setZoomFactor(context.zoomFactor);
+        setViewOrigin(context.origin);
     }
 
         // Renders available merch items
@@ -207,6 +278,9 @@ export default function View() {
                         removeId={removeSticker}
                         setStateOfId={setStickerState}
                         setLimitTimerOfId={setStickerLimitTimer}
+                        getStateManager={() => {
+                            return getViewContext().stateManager
+                        }}
                     />
                 )
             })
@@ -228,6 +302,7 @@ export default function View() {
                     items={dropDownMenuContent}
                 />
             }
+            Right-click to place a sticker.
         </AppContent>
     )
 }
@@ -238,6 +313,14 @@ const AppContent = styled.div`
     top     : 0px;
     width   : 100%;
     height  : 100%;
+
+    display         : flex;
+    justify-content : center;
+    align-items     : center;
+
+    color       : rgba(0, 0, 0, 0.25);
+    font-weight : bold;
+    font-size   : 48px;
 
     user-select: none;
 `;
