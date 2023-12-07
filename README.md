@@ -1,5 +1,7 @@
 # MerchBetter (v.0.1 ALPHA)
 
+![Screenshot](https://github.com/JaniHarkonen/MerchBetter/blob/main/screenshot.png)
+
 MerchBetter is an application solely desgined for taking notes while merching in OldSchool RuneScape (Notepad on steroids).
 Notes are taken in the form of a sticker that holds the price at which to **buy** the item as well as the **selling** price. The
 **profit margin** is then calculated and displayed to the left of the selling price. Setting the **GE-Limit** helps you calculate
